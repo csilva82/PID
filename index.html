@@ -2,7 +2,6 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <!-- Tag essencial para responsividade no celular -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Simulador de controle PID</title>
     <style>
@@ -86,13 +85,6 @@
             font-size: 12px;
             overflow-x: auto;
         }
-        .example-box {
-            background: #1a252f;
-            border-left: 4px solid #e67e22;
-            padding: 10px;
-            margin: 8px 0;
-            font-size: 12px;
-        }
         .close-btn {
             background: #e74c3c;
             color: white;
@@ -108,7 +100,7 @@
         /* Layout Grid Principal */
         .dashboard {
             display: grid;
-            grid-template-columns: 430px 1fr 340px;
+            grid-template-columns: 460px 1fr 340px;
             gap: 15px;
             max-width: 1550px;
             margin: 0 auto;
@@ -119,11 +111,11 @@
             border-radius: 6px;
             padding: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            min-width: 0; /* Evita estouro de grid no mobile */
+            min-width: 0;
         }
         .panel h3 { margin-top: 0; font-size: 15px; border-bottom: 1px solid #4e6d8c; padding-bottom: 5px; color: #f1c40f; }
         
-        /* Gráfico Estilo MATLAB com Zoom */
+        /* Gráfico Estilo MATLAB com Alta Resolução */
         .chart-container { position: relative; background: #fff; border-radius: 4px; padding: 6px; }
         #chartCanvas {
             background: #fff;
@@ -132,7 +124,7 @@
             height: 380px;
             cursor: crosshair;
             display: block;
-            touch-action: none; /* Permite arrastar o zoom no touch sem rolar a tela */
+            touch-action: none;
         }
         .chart-toolbar {
             display: flex;
@@ -292,15 +284,12 @@
         }
         .btn-sinistro.ativo { background: #c0392b; box-shadow: inset 0 0 8px rgba(0,0,0,0.6); border: 1px solid #fff; }
 
-        /* =========================================
-           MEDIA QUERIES (TABLETS E CELULARES)
-           ========================================= */
         @media (max-width: 1150px) {
             .dashboard {
                 grid-template-columns: 1fr 1fr;
             }
             .dashboard > .panel:nth-child(1) {
-                grid-column: 1 / -1; /* Gráfico ocupa a largura toda no topo em tablets */
+                grid-column: 1 / -1;
             }
         }
 
@@ -309,17 +298,17 @@
                 padding: 8px;
             }
             .dashboard {
-                grid-template-columns: 1fr; /* Coluna única no celular */
+                grid-template-columns: 1fr;
                 gap: 12px;
             }
             #chartCanvas {
-                height: 280px; /* Altura reduzida para caber melhor na tela do celular */
+                height: 300px;
             }
             #plantCanvas {
                 height: 230px;
             }
             .btn-sim, .btn-sinistro, .btn-tune {
-                padding: 10px; /* Área de toque maior para os dedos */
+                padding: 10px;
                 font-size: 13px;
             }
         }
@@ -338,32 +327,9 @@
     <div id="modalSobre" class="modal">
         <div class="modal-content">
             <h3>Sobre o Simulador</h3>
-            <p>Simulador de controle PID multi-malha para processos industriais com resposta ao degrau em tempo real.</p>
+            <p>Simulador de controle PID multi-malha para processos industriais com resposta ao degrau em alta definição (5.000 amostras).</p>
             <p><strong>DESENVOLVIDO POR:</strong><br>Luiz Carlos</p>
             <button class="close-btn" onclick="fecharModal()">Fechar</button>
-        </div>
-    </div>
-
-    <!-- Modal Memorial de Cálculos -->
-    <div id="modalMemorial" class="modal">
-        <div class="modal-content">
-            <h3>Memorial de Cálculos & Exemplo Prático</h3>
-            <p><b>1. Fórmulas Matemáticas Aplicadas:</b></p>
-            <div class="formula-box">
-                MV(t) = Kp · e(t) + Ki ∫ e(τ)dτ - Kd · (d(PV)/dt)
-            </div>
-            <p>Onde:</p>
-            <ul>
-                <li><b>e(t)</b> = Erro atual (SP - PV)</li>
-                <li><b>Kp</b> = Ganho Proporcional</li>
-                <li><b>Ki</b> = Ganho Integral</li>
-                <li><b>Kd</b> = Ganho Derivativo (aplicado diretamente sobre o PV para evitar o tranco derivativo ou <i>derivative kick</i>).</li>
-            </ul>
-            <p><b>2. Critério de Estabilização (Settling Time):</b></p>
-            <div class="formula-box">
-                |PV(t) - SP| ≤ 0.02 · SP (tolerância de ±2%)
-            </div>
-            <button class="close-btn" onclick="fecharMemorial()">Fechar</button>
         </div>
     </div>
 
@@ -371,7 +337,7 @@
         
         <!-- COLUNA 1: GRÁFICO -->
         <div class="panel">
-            <h3>Step Response & Zoom Trend</h3>
+            <h3>Step Response & Zoom Trend (Alta Nitidez)</h3>
             
             <div class="sim-controls">
                 <button class="btn-sim btn-start" onclick="startSim()">▶ Iniciar</button>
@@ -396,7 +362,10 @@
 
             <!-- Painel de Estabilização -->
             <div class="stab-box">
-                <b>Tempo de Estabilização (Critério ±2%):</b><br>
+                <div style="display:flex; justify-content:space-between;">
+                    <b>Tempo de Estabilização (±2%):</b>
+                    <span id="ptsCounter" style="color:#95a5a6; font-size:11px;">Pontos: 0 / 5000</span>
+                </div>
                 🌊 Nível: <span id="stabL">Aguardando...</span><br>
                 🔥 Temp: <span id="stabT">Aguardando...</span><br>
                 ⏲ Pressão: <span id="stabP">Aguardando...</span>
@@ -481,10 +450,25 @@
     </div>
 
 <script>
+    // Capacidade máxima ampliada em 10x (de 500 para 5000 amostras)
+    const MAX_HISTORY_POINTS = 5000;
+
     function abrirModal() { document.getElementById('modalSobre').style.display = 'flex'; }
     function fecharModal() { document.getElementById('modalSobre').style.display = 'none'; }
-    function abrirMemorial() { document.getElementById('modalMemorial').style.display = 'flex'; }
-    function fecharMemorial() { document.getElementById('modalMemorial').style.display = 'none'; }
+
+    // Função utilitária para configurar nitidez máxima (Retina / High-DPI) no Canvas
+    function setupHiDPICanvas(canvas) {
+        const dpr = window.devicePixelRatio || 1;
+        const cssWidth = canvas.clientWidth;
+        const cssHeight = canvas.clientHeight;
+        if (canvas.width !== cssWidth * dpr || canvas.height !== cssHeight * dpr) {
+            canvas.width = cssWidth * dpr;
+            canvas.height = cssHeight * dpr;
+        }
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { ctx, w: cssWidth, h: cssHeight };
+    }
 
     class PID {
         constructor(kp, ki, kd) {
@@ -537,7 +521,7 @@
 
     function startSim() {
         plant.isRunning = true;
-        document.getElementById('statusRunText').innerHTML = "Status: <b>Simulação em andamento...</b>";
+        document.getElementById('statusRunText').innerHTML = "Status: <b>Simulação em andamento (Alta Resolução)...</b>";
     }
 
     function pauseSim() {
@@ -562,6 +546,7 @@
         document.getElementById('pvL').innerText = "0.0%";
         document.getElementById('pvT').innerText = "0.0°C";
         document.getElementById('pvP').innerText = "0.00 bar";
+        document.getElementById('ptsCounter').innerText = `Pontos: 0 / ${MAX_HISTORY_POINTS}`;
         drawPlant();
         drawChart();
     }
@@ -668,7 +653,8 @@
             return;
         }
 
-        let dt = 0.1;
+        // Passo temporal mais refinado (0.05s) para maior definição nas curvas
+        let dt = 0.05;
         plant.timeElapsed += dt;
 
         processAutoTune(dt);
@@ -707,7 +693,8 @@
         plant.history.spT.push(plant.spTemp);
         plant.history.spP.push(plant.spPress);
 
-        if (plant.history.time.length > 500) {
+        // Retém até 5.000 pontos (10x mais que o original)
+        if (plant.history.time.length > MAX_HISTORY_POINTS) {
             plant.history.time.shift();
             plant.history.level.shift(); plant.history.temp.shift(); plant.history.press.shift();
             plant.history.spL.shift(); plant.history.spT.shift(); plant.history.spP.shift();
@@ -716,6 +703,7 @@
         document.getElementById('pvL').innerText = plant.level.toFixed(1) + '%';
         document.getElementById('pvT').innerText = plant.temp.toFixed(1) + '°C';
         document.getElementById('pvP').innerText = plant.press.toFixed(2) + ' bar';
+        document.getElementById('ptsCounter').innerText = `Pontos: ${plant.history.time.length} / ${MAX_HISTORY_POINTS}`;
 
         drawPlant();
         drawChart();
@@ -723,13 +711,9 @@
 
     function drawPlant() {
         let canvas = document.getElementById('plantCanvas');
-        let ctx = canvas.getContext('2d');
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let { ctx, w, h } = setupHiDPICanvas(canvas);
+        ctx.clearRect(0, 0, w, h);
 
-        let w = canvas.width;
-        let h = canvas.height;
         let colW = w / 3;
         let isSmall = w < 380;
 
@@ -813,12 +797,8 @@
 
     function drawChart() {
         let canvas = document.getElementById('chartCanvas');
-        let ctx = canvas.getContext('2d');
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
+        let { ctx, w, h } = setupHiDPICanvas(canvas);
 
-        let w = canvas.width;
-        let h = canvas.height;
         let padL = w < 400 ? 38 : 50;
         let padR = 15;
         let padT = 20;
@@ -845,7 +825,7 @@
 
         let times = plant.history.time;
         
-        let minT = (zoomMinTime !== null) ? zoomMinTime : 0;
+        let minT = (zoomMinTime !== null) ? zoomMinTime : (times.length > 0 ? times[0] : 0);
         let maxT = (zoomMaxTime !== null) ? zoomMaxTime : 10; 
         if (times.length > 0 && times[times.length - 1] > maxT && zoomMaxTime === null) {
             maxT = Math.ceil(times[times.length - 1] / 5) * 5;
@@ -906,7 +886,7 @@
             let spY = mapY(spVal, maxVal);
             ctx.strokeStyle = color;
             ctx.lineWidth = 1;
-            ctx.setLineDash([3, 3]);
+            ctx.setLineDash([4, 4]);
             ctx.beginPath();
             ctx.moveTo(padL, spY);
             ctx.lineTo(w - padR, spY);
@@ -915,6 +895,8 @@
 
             ctx.strokeStyle = color;
             ctx.lineWidth = 2;
+            ctx.lineJoin = "round";
+            ctx.lineCap = "round";
             ctx.beginPath();
             let started = false;
             for (let i = 0; i < timeArr.length; i++) {
@@ -943,7 +925,6 @@
         }
     }
 
-    // Eventos de Zoom (Suporte a Mouse e Touch para Celular)
     let chartCanvas = document.getElementById('chartCanvas');
 
     function getPointerX(e) {
@@ -971,13 +952,14 @@
         let x2 = Math.max(dragStartX, dragEndX);
 
         if (Math.abs(x2 - x1) > 10) {
-            let padL = chartCanvas.width < 400 ? 38 : 50;
+            let cssW = chartCanvas.clientWidth;
+            let padL = cssW < 400 ? 38 : 50;
             let padR = 15;
-            let graphW = chartCanvas.width - padL - padR;
+            let graphW = cssW - padL - padR;
             let times = plant.history.time;
             if (times.length < 2) return;
 
-            let minT = (zoomMinTime !== null) ? zoomMinTime : 0;
+            let minT = (zoomMinTime !== null) ? zoomMinTime : (times.length > 0 ? times[0] : 0);
             let maxT = (zoomMaxTime !== null) ? zoomMaxTime : (times.length > 0 ? times[times.length - 1] : 10);
 
             let t1 = minT + ((x1 - padL) / graphW) * (maxT - minT);
@@ -1005,7 +987,8 @@
     drawPlant();
     drawChart();
 
-    setInterval(simulate, 100);
+    // Taxa de atualização dobrada (50ms = 20 amostras/seg) para curvas super suaves
+    setInterval(simulate, 50);
 </script>
 
 </body>
