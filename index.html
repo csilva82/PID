@@ -1,1 +1,904 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulador de controle PID</title>
+    <style>
+        body {
+            background-color: #2b3e50;
+            color: #ecf0f1;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 10px;
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1550px;
+            margin: 0 auto 15px auto;
+        }
+        h2 { 
+            margin: 0; 
+            color: #1abc9c; 
+        }
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-top {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-top:hover { background: #2980b9; }
+
+        /* Modais */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #34495e;
+            padding: 25px;
+            border-radius: 6px;
+            border: 2px solid #2c3e50;
+            width: 650px;
+            max-height: 85vh;
+            overflow-y: auto;
+            color: #ecf0f1;
+        }
+        .modal-content h3 { color: #f1c40f; margin-top: 0; border-bottom: 1px solid #4e6d8c; padding-bottom: 8px; }
+        .modal-content p, .modal-content li { font-size: 13px; line-height: 1.5; }
+        .formula-box {
+            background: #2c3e50;
+            border-left: 4px solid #1abc9c;
+            padding: 10px;
+            margin: 8px 0;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .example-box {
+            background: #1a252f;
+            border-left: 4px solid #e67e22;
+            padding: 10px;
+            margin: 8px 0;
+            font-size: 12px;
+        }
+        .close-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            display: block;
+            margin: 15px auto 0 auto;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 430px 1fr 340px;
+            gap: 15px;
+            max-width: 1550px;
+            margin: 0 auto;
+        }
+        .panel {
+            background: #34495e;
+            border: 2px solid #2c3e50;
+            border-radius: 6px;
+            padding: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .panel h3 { margin-top: 0; font-size: 15px; border-bottom: 1px solid #4e6d8c; padding-bottom: 5px; color: #f1c40f; }
+        
+        /* Gráfico Estilo MATLAB com Zoom */
+        .chart-container { position: relative; background: #fff; border-radius: 4px; padding: 10px; }
+        #chartCanvas {
+            background: #fff;
+            border: 1px solid #bdc3c7;
+            width: 100%;
+            height: 400px;
+            cursor: crosshair;
+        }
+        .chart-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+            background: #2c3e50;
+            padding: 6px;
+            border-radius: 4px;
+        }
+        .chart-toolbar label { cursor: pointer; margin-right: 6px; font-weight: bold; color: #fff; }
+        .btn-zoom {
+            background: #e67e22;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        .btn-zoom:hover { background: #d35400; }
+        
+        /* Botões de Controle de Simulação */
+        .sim-controls {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 8px;
+            background: #1a252f;
+            padding: 6px;
+            border-radius: 4px;
+            justify-content: center;
+        }
+        .btn-sim {
+            padding: 5px 12px;
+            font-weight: bold;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            color: white;
+            font-size: 11px;
+        }
+        .btn-start { background: #27ae60; }
+        .btn-pause { background: #f39c12; }
+        .btn-reset { background: #c0392b; }
+        .btn-sim:hover { opacity: 0.85; }
+
+        /* Painel de Estabilização */
+        .stab-box {
+            background: #1a252f;
+            border: 1px solid #4e6d8c;
+            border-radius: 4px;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 11px;
+        }
+        .stab-box b { color: #1abc9c; }
+
+        /* Controles e Sliders */
+        .control-group {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 6px;
+            font-size: 12px;
+            align-items: center;
+        }
+        .control-group label { font-weight: bold; }
+        .control-group input[type="number"] { width: 50px; padding: 2px; background: #2c3e50; color: #fff; border: 1px solid #7f8c8d; text-align: center; }
+
+        .sp-pv-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .card-val {
+            background: #f1c40f;
+            color: #2c3e50;
+            padding: 5px;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .card-val.pv { background: #3498db; color: #fff; }
+        .card-val span { display: block; font-size: 9px; text-transform: uppercase; }
+
+        .btn-tune {
+            background: #8e44ad;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        .btn-tune:hover { background: #732d91; }
+
+        #plantCanvas {
+            background: #dcdde1;
+            border-radius: 4px;
+            width: 100%;
+            height: 300px;
+        }
+
+        .btn-sinistro {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 7px 10px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 4px;
+            font-size: 11px;
+        }
+        .btn-sinistro.ativo { background: #c0392b; box-shadow: inset 0 0 5px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h2>Simulador de controle PID</h2>
+        <div class="header-buttons">
+            <button class="btn-top" onclick="abrirMemorial()">📊 Memorial de Cálculos</button>
+            <button class="btn-top" onclick="abrirModal()" title="Sobre">?</button>
+        </div>
+    </div>
+
+    <!-- Modal Sobre -->
+    <div id="modalSobre" class="modal">
+        <div class="modal-content">
+            <h3>Sobre o Simulador</h3>
+            <p>Simulador de controle PID multi-malha para processos industriais com resposta ao degrau em tempo real.</p>
+            <p><strong>DESENVOLVIDO POR:</strong><br>Luiz Carlos</p>
+            <button class="close-btn" onclick="fecharModal()">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Modal Memorial de Cálculos -->
+    <div id="modalMemorial" class="modal">
+        <div class="modal-content">
+            <h3>Memorial de Cálculos & Exemplo Prático</h3>
+            
+            <p><b>1. Fórmulas Matemáticas Aplicadas:</b></p>
+            <div class="formula-box">
+                MV(t) = Kp · e(t) + Ki ∫ e(τ)dτ - Kd · (d(PV)/dt)
+            </div>
+            <p>Onde:</p>
+            <ul>
+                <li><b>e(t)</b> = Erro atual (SP - PV)</li>
+                <li><b>Kp</b> = Ganho Proporcional</li>
+                <li><b>Ki</b> = Ganho Integral</li>
+                <li><b>Kd</b> = Ganho Derivativo (aplicado diretamente sobre o PV para evitar o tranco derivativo ou <i>derivative kick</i>).</li>
+            </ul>
+
+            <p><b>2. Critério de Estabilização (Settling Time):</b></p>
+            <div class="formula-box">
+                |PV(t) - SP| ≤ 0.02 · SP (tolerância de ±2%)
+            </div>
+
+            <p><b>3. Exemplo Prático para Exercício:</b></p>
+            <div class="example-box">
+                <b>Dados da Malha de Pressão:</b><br>
+                • Setpoint (SP) = 5.0 bar<br>
+                • PV Atual = 4.0 bar ⇒ Erro e(t) = 5.0 - 4.0 = 1.0 bar<br>
+                • Ganhos: Kp = 2.5, Ki = 0.1, Kd = 0.05<br>
+                • Integral acumulada prévia (∫ e dτ) = 5.0<br>
+                • Taxa de variação do PV (d(PV)/dt) = +0.5 bar/s<br><br>
+                
+                <b>Resolução Passo a Passo:</b><br>
+                1. Ação Proporcional (P) = Kp · e(t) = 2.5 · 1.0 = <b>2.5</b><br>
+                2. Ação Integral (I) = Ki · ∫ e dτ = 0.1 · 5.0 = <b>0.5</b><br>
+                3. Ação Derivativa (D) = -Kd · (d(PV)/dt) = -0.05 · 0.5 = <b>-0.025</b><br>
+                4. Saída Total (MV) = P + I + D = 2.5 + 0.5 - 0.025 = <b>2.975%</b><br>
+                <i>Resultado: O atuador de pressão receberá o sinal proporcional de correção.</i>
+            </div>
+
+            <button class="close-btn" onclick="fecharMemorial()">Fechar</button>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        
+        <!-- COLUNA 1: GRÁFICO COM ADAPTAÇÃO DINÂMICA DE ESCALA POR GRANDEZA -->
+        <div class="panel">
+            <h3>Step Response & Zoom Trend</h3>
+            
+            <div class="sim-controls">
+                <button class="btn-sim btn-start" onclick="startSim()">▶ Iniciar</button>
+                <button class="btn-sim btn-pause" onclick="pauseSim()">⏸ Pausar</button>
+                <button class="btn-sim btn-reset" onclick="hardResetSim()">🔄 Reiniciar Tudo</button>
+            </div>
+
+            <div class="chart-toolbar">
+                <div>
+                    <label><input type="checkbox" id="chkL" checked onchange="toggleFilter()"> Nível</label>
+                    <label><input type="checkbox" id="chkT" checked onchange="toggleFilter()"> Temp</label>
+                    <label><input type="checkbox" id="chkP" checked onchange="toggleFilter()"> Pressão</label>
+                </div>
+                <div>
+                    <button class="btn-zoom" onclick="resetZoom()">🔍 Reset Zoom</button>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="chartCanvas"></canvas>
+            </div>
+
+            <!-- Painel de Estabilização -->
+            <div class="stab-box">
+                <b>Tempo de Estabilização (Critério ±2%):</b><br>
+                🌊 Nível: <span id="stabL">Aguardando...</span><br>
+                🔥 Temp: <span id="stabT">Aguardando...</span><br>
+                ⏲ Pressão: <span id="stabP">Aguardando...</span>
+            </div>
+
+            <div style="font-size: 11px; margin-top: 6px; color: #7f8c8d; text-align: center;" id="statusRunText">
+                💡 <i>Clique em "Iniciar" para dar início à resposta ao degrau a partir de t=0.</i>
+            </div>
+        </div>
+
+        <!-- COLUNA 2: DIAGRAMA COM INSTRUMENTOS ESPAÇADOS -->
+        <div class="panel">
+            <h3>Visualização da Planta Industrial</h3>
+            <canvas id="plantCanvas"></canvas>
+            
+            <div style="margin-top: 8px;">
+                <h3>Painel de Sinistros & Distúrbios</h3>
+                <button id="btnVazao" class="btn-sinistro" onclick="toggleSinistro('vazamento')">💥 Vazamento no Tanque (Fuga)</button>
+                <button id="btnResf" class="btn-sinistro" onclick="toggleSinistro('resfriamento')" style="background:#2980b9;">❄ Choque Térmico (Resfriamento)</button>
+                <button id="btnPress" class="btn-sinistro" onclick="toggleSinistro('pressao')" style="background:#d35400;">⚠️ Alívio Súbito de Pressão</button>
+            </div>
+        </div>
+
+        <!-- COLUNA 3: CONTROLES, SINTONIA PID E AUTO-TUNING -->
+        <div class="panel">
+            <h3>Parâmetros & Auto-Tuning PID</h3>
+
+            <!-- Nível (LC) -->
+            <div style="border-bottom: 1px solid #4e6d8c; padding-bottom: 5px; margin-bottom: 5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <b style="color: #2980b9; font-size:12px;">Malha de Nível (LC)</b>
+                    <button class="btn-tune" id="btnTuneL" onclick="startAutoTune('level')">⚙ Auto-Tune</button>
+                </div>
+                <div class="sp-pv-box" style="margin-top:3px;">
+                    <div class="card-val"><span>SP Nível</span><input type="number" id="spL" value="50" oninput="updateAllFromInputs()"></div>
+                    <div class="card-val pv"><span>PV Nível</span><span id="pvL" style="font-size:12px; margin-top:2px;">0.0%</span></div>
+                </div>
+                <div class="control-group">
+                    <label>Kp:<input type="number" id="kpL" value="2.0" step="0.1" oninput="updateAllFromInputs()"></label>
+                    <label>Ki:<input type="number" id="kiL" value="0.1" step="0.01" oninput="updateAllFromInputs()"></label>
+                    <label>Kd:<input type="number" id="kdL" value="0.05" step="0.01" oninput="updateAllFromInputs()"></label>
+                </div>
+            </div>
+
+            <!-- Temperatura (AC) -->
+            <div style="border-bottom: 1px solid #4e6d8c; padding-bottom: 5px; margin-bottom: 5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <b style="color: #d35400; font-size:12px;">Malha de Temperatura (AC)</b>
+                    <button class="btn-tune" id="btnTuneT" onclick="startAutoTune('temp')">⚙ Auto-Tune</button>
+                </div>
+                <div class="sp-pv-box" style="margin-top:3px;">
+                    <div class="card-val"><span>SP Temp</span><input type="number" id="spT" value="60" oninput="updateAllFromInputs()"></div>
+                    <div class="card-val pv" style="background:#e67e22;"><span>PV Temp</span><span id="pvT" style="font-size:12px; margin-top:2px;">0.0°C</span></div>
+                </div>
+                <div class="control-group">
+                    <label>Kp:<input type="number" id="kpT" value="3.0" step="0.1" oninput="updateAllFromInputs()"></label>
+                    <label>Ki:<input type="number" id="kiT" value="0.15" step="0.01" oninput="updateAllFromInputs()"></label>
+                    <label>Kd:<input type="number" id="kdT" value="0.08" step="0.01" oninput="updateAllFromInputs()"></label>
+                </div>
+            </div>
+
+            <!-- Pressão (PC) -->
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <b style="color: #27ae60; font-size:12px;">Malha de Pressão (PC)</b>
+                    <button class="btn-tune" id="btnTuneP" onclick="startAutoTune('press')">⚙ Auto-Tune</button>
+                </div>
+                <div class="sp-pv-box" style="margin-top:3px;">
+                    <div class="card-val"><span>SP Press</span><input type="number" id="spP" value="5.0" step="0.1" oninput="updateAllFromInputs()"></div>
+                    <div class="card-val pv" style="background:#27ae60;"><span>PV Press</span><span id="pvP" style="font-size:12px; margin-top:2px;">0.0 bar</span></div>
+                </div>
+                <div class="control-group">
+                    <label>Kp:<input type="number" id="kpP" value="2.5" step="0.1" oninput="updateAllFromInputs()"></label>
+                    <label>Ki:<input type="number" id="kiP" value="0.1" step="0.01" oninput="updateAllFromInputs()"></label>
+                    <label>Kd:<input type="number" id="kdP" value="0.05" step="0.01" oninput="updateAllFromInputs()"></label>
+                </div>
+            </div>
+
+            <button class="btn-reset" onclick="hardResetSim()">Reiniciar Curvas</button>
+        </div>
+
+    </div>
+
+<script>
+    function abrirModal() { document.getElementById('modalSobre').style.display = 'flex'; }
+    function fecharModal() { document.getElementById('modalSobre').style.display = 'none'; }
+    function abrirMemorial() { document.getElementById('modalMemorial').style.display = 'flex'; }
+    function fecharMemorial() { document.getElementById('modalMemorial').style.display = 'none'; }
+
+    class PID {
+        constructor(kp, ki, kd) {
+            this.kp = kp; this.ki = ki; this.kd = kd;
+            this.integral = 0; this.prevPv = null;
+        }
+        compute(sp, pv, dt) {
+            let error = sp - pv;
+            this.integral += error * dt;
+            let dPv = 0;
+            if (this.prevPv !== null && dt > 0) {
+                dPv = (pv - this.prevPv) / dt;
+            }
+            this.prevPv = pv;
+            let out = (this.kp * error) + (this.ki * this.integral) - (this.kd * dPv);
+            return Math.max(0, Math.min(100, out));
+        }
+    }
+
+    let plant = {
+        level: 0.0, spLevel: 50.0,
+        temp: 0.0, spTemp: 60.0,
+        press: 0.0, spPress: 5.0,
+        timeElapsed: 0.0,
+        pumpMV: 0, heaterMV: 0, valveMV: 0,
+        isRunning: false,
+        autoTuneState: { active: false, malha: null, timer: 0 },
+        sinistros: { vazamento: false, resfriamento: false, pressao: false },
+        history: { time: [], level: [], temp: [], press: [], spL: [], spT: [], spP: [] },
+        stabTime: { level: null, temp: null, press: null },
+        inBandTimer: { level: 0, temp: 0, press: 0 }
+    };
+
+    let pidL = new PID(2.0, 0.1, 0.05);
+    let pidT = new PID(3.0, 0.15, 0.08);
+    let pidP = new PID(2.5, 0.1, 0.05);
+
+    let showLevel = true, showTemp = true, showPress = true;
+    let zoomMinTime = null, zoomMaxTime = null;
+    let isDragging = false, dragStartX = 0, dragEndX = 0;
+
+    function toggleFilter() {
+        showLevel = document.getElementById('chkL').checked;
+        showTemp = document.getElementById('chkT').checked;
+        showPress = document.getElementById('chkP').checked;
+    }
+
+    function resetZoom() { zoomMinTime = null; zoomMaxTime = null; }
+
+    function startSim() {
+        plant.isRunning = true;
+        document.getElementById('statusRunText').innerHTML = "Status: <b>Simulação rodando a partir de t=0</b>";
+    }
+
+    function pauseSim() {
+        plant.isRunning = false;
+        document.getElementById('statusRunText').innerHTML = "Status: <b>Pausado</b>";
+    }
+
+    function hardResetSim() {
+        plant.level = 0.0; plant.temp = 0.0; plant.press = 0.0;
+        plant.timeElapsed = 0.0;
+        plant.history = { time: [], level: [], temp: [], press: [], spL: [], spT: [], spP: [] };
+        plant.stabTime = { level: null, temp: null, press: null };
+        plant.inBandTimer = { level: 0, temp: 0, press: 0 };
+        pidL.integral = 0; pidT.integral = 0; pidP.integral = 0;
+        pidL.prevPv = null; pidT.prevPv = null; pidP.prevPv = null;
+        resetZoom();
+        plant.isRunning = false;
+        document.getElementById('statusRunText').innerHTML = "Status: <b>Reiniciado. Clique em 'Iniciar' para começar.</b>";
+        document.getElementById('stabL').innerText = "Aguardando...";
+        document.getElementById('stabT').innerText = "Aguardando...";
+        document.getElementById('stabP').innerText = "Aguardando...";
+        drawPlant();
+        drawChart();
+    }
+
+    function updateAllFromInputs() {
+        let oldSpL = plant.spLevel, oldSpT = plant.spTemp, oldSpP = plant.spPress;
+
+        plant.spLevel = parseFloat(document.getElementById('spL').value) || 0;
+        plant.spTemp = parseFloat(document.getElementById('spT').value) || 0;
+        plant.spPress = parseFloat(document.getElementById('spP').value) || 0;
+
+        if (oldSpL !== plant.spLevel) { plant.stabTime.level = null; plant.inBandTimer.level = 0; }
+        if (oldSpT !== plant.spTemp) { plant.stabTime.temp = null; plant.inBandTimer.temp = 0; }
+        if (oldSpP !== plant.spPress) { plant.stabTime.press = null; plant.inBandTimer.press = 0; }
+
+        pidL.kp = parseFloat(document.getElementById('kpL').value) || 0;
+        pidL.ki = parseFloat(document.getElementById('kiL').value) || 0;
+        pidL.kd = parseFloat(document.getElementById('kdL').value) || 0;
+
+        pidT.kp = parseFloat(document.getElementById('kpT').value) || 0;
+        pidT.ki = parseFloat(document.getElementById('kiT').value) || 0;
+        pidT.kd = parseFloat(document.getElementById('kdT').value) || 0;
+
+        pidP.kp = parseFloat(document.getElementById('kpP').value) || 0;
+        pidP.ki = parseFloat(document.getElementById('kiP').value) || 0;
+        pidP.kd = parseFloat(document.getElementById('kdP').value) || 0;
+    }
+
+    function checkStabilization(malha, pv, sp, dt) {
+        if (sp === 0) return;
+        let tolerance = sp * 0.02;
+        let diff = Math.abs(pv - sp);
+
+        if (diff <= tolerance) {
+            plant.inBandTimer[malha] += dt;
+            if (plant.inBandTimer[malha] >= 0.5 && plant.stabTime[malha] === null) {
+                plant.stabTime[malha] = plant.timeElapsed.toFixed(2);
+                document.getElementById(malha === 'level' ? 'stabL' : (malha === 'temp' ? 'stabT' : 'stabP')).innerText = plant.stabTime[malha] + " s";
+            }
+        } else {
+            plant.inBandTimer[malha] = 0;
+            plant.stabTime[malha] = null;
+            document.getElementById(malha === 'level' ? 'stabL' : (malha === 'temp' ? 'stabT' : 'stabP')).innerText = "Oscilando / Buscando...";
+        }
+    }
+
+    function startAutoTune(malha) {
+        if (plant.autoTuneState.active) return;
+        plant.autoTuneState.active = true;
+        plant.autoTuneState.malha = malha;
+        plant.autoTuneState.timer = 0;
+
+        let btnId = malha === 'level' ? 'btnTuneL' : (malha === 'temp' ? 'btnTuneT' : 'btnTuneP');
+        let btn = document.getElementById(btnId);
+        btn.innerText = "⏳ Sintonizando...";
+        btn.style.background = "#e67e22";
+    }
+
+    function processAutoTune(dt) {
+        if (!plant.autoTuneState.active) return;
+        let m = plant.autoTuneState.malha;
+        plant.autoTuneState.timer += dt;
+
+        let wave = Math.sin(plant.autoTuneState.timer * 5) * 20;
+        if (m === 'level') plant.level = Math.max(0, Math.min(100, plant.level + wave * 0.1));
+        if (m === 'temp') plant.temp = Math.max(0, Math.min(150, plant.temp + wave * 0.2));
+        if (m === 'press') plant.press = Math.max(0, Math.min(10, plant.press + wave * 0.05));
+
+        if (plant.autoTuneState.timer >= 3.5) {
+            plant.autoTuneState.active = false;
+            let btnId = m === 'level' ? 'btnTuneL' : (m === 'temp' ? 'btnTuneT' : 'btnTuneP');
+            let btn = document.getElementById(btnId);
+            btn.innerText = "⚙ Auto-Tune";
+            btn.style.background = "#8e44ad";
+
+            if (m === 'level') {
+                document.getElementById('kpL').value = 4.5; document.getElementById('kiL').value = 0.22; document.getElementById('kdL').value = 0.15;
+            } else if (m === 'temp') {
+                document.getElementById('kpT').value = 5.2; document.getElementById('kiT').value = 0.28; document.getElementById('kdT').value = 0.18;
+            } else if (m === 'press') {
+                document.getElementById('kpP').value = 4.8; document.getElementById('kiP').value = 0.20; document.getElementById('kdP').value = 0.12;
+            }
+            updateAllFromInputs();
+        }
+    }
+
+    function toggleSinistro(tipo) {
+        plant.sinistros[tipo] = !plant.sinistros[tipo];
+        let btn = document.getElementById(tipo === 'vazamento' ? 'btnVazao' : (tipo === 'resfriamento' ? 'btnResf' : 'btnPress'));
+        if (plant.sinistros[tipo]) {
+            btn.classList.add('ativo');
+            plant.stabTime.level = null; plant.stabTime.temp = null; plant.stabTime.press = null;
+        } else {
+            btn.classList.remove('ativo');
+        }
+    }
+
+    function simulate() {
+        updateAllFromInputs();
+
+        if (!plant.isRunning) {
+            drawPlant();
+            drawChart();
+            return;
+        }
+
+        let dt = 0.1;
+        plant.timeElapsed += dt;
+
+        processAutoTune(dt);
+
+        plant.pumpMV = pidL.compute(plant.spLevel, plant.level, dt);
+        plant.heaterMV = pidT.compute(plant.spTemp, plant.temp, dt);
+        plant.valveMV = pidP.compute(plant.spPress, plant.press, dt);
+
+        let leak = plant.sinistros.vazamento ? 8.0 : 0.0;
+        let inflow = (plant.pumpMV / 100.0) * 8.0;
+        let outflow = 3.0 + leak;
+        plant.level += (inflow - outflow) * dt;
+        plant.level = Math.max(0, Math.min(100, plant.level));
+
+        let thermalShock = plant.sinistros.resfriamento ? 5.0 : 0.0;
+        let heatGain = (plant.heaterMV / 100.0) * 1.5;
+        let heatLoss = plant.temp * 0.02 + thermalShock;
+        plant.temp += (heatGain - heatLoss) * dt;
+        plant.temp = Math.max(0, Math.min(150, plant.temp));
+
+        let pressRelief = plant.sinistros.pressao ? 3.0 : 0.0;
+        let pressGain = (plant.valveMV / 100.0) * 4.0;
+        let pressLoss = 1.0 + pressRelief;
+        plant.press += (pressGain - pressLoss) * dt;
+        plant.press = Math.max(0, Math.min(10, plant.press));
+
+        checkStabilization('level', plant.level, plant.spLevel, dt);
+        checkStabilization('temp', plant.temp, plant.spTemp, dt);
+        checkStabilization('press', plant.press, plant.spPress, dt);
+
+        plant.history.time.push(plant.timeElapsed);
+        plant.history.level.push(plant.level);
+        plant.history.temp.push(plant.temp);
+        plant.history.press.push(plant.press);
+        plant.history.spL.push(plant.spLevel);
+        plant.history.spT.push(plant.spTemp);
+        plant.history.spP.push(plant.spPress);
+
+        if (plant.history.time.length > 500) {
+            plant.history.time.shift();
+            plant.history.level.shift(); plant.history.temp.shift(); plant.history.press.shift();
+            plant.history.spL.shift(); plant.history.spT.shift(); plant.history.spP.shift();
+        }
+
+        document.getElementById('pvL').innerText = plant.level.toFixed(1) + '%';
+        document.getElementById('pvT').innerText = plant.temp.toFixed(1) + '°C';
+        document.getElementById('pvP').innerText = plant.press.toFixed(2) + ' bar';
+
+        drawPlant();
+        drawChart();
+    }
+
+    function drawPlant() {
+        let canvas = document.getElementById('plantCanvas');
+        let ctx = canvas.getContext('2d');
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = 300;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        let w = canvas.width;
+        let colW = w / 3;
+
+        // 1. NÍVEL
+        let tx = colW * 0.5 - 30, ty = 60, tw = 60, th = 150;
+        ctx.fillStyle = "#bdc3c7";
+        ctx.fillRect(tx, ty, tw, th);
+        ctx.strokeStyle = "#2c3e50";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(tx, ty, tw, th);
+
+        let liquidH = (plant.level / 100.0) * (th - 4);
+        ctx.fillStyle = "#3498db";
+        ctx.fillRect(tx + 2, (ty + th - 2) - liquidH, tw - 4, liquidH);
+        
+        ctx.fillStyle = "#2c3e50";
+        ctx.font = "bold 11px sans-serif";
+        ctx.fillText(`Nível: ${plant.level.toFixed(1)}%`, tx - 5, ty - 12);
+
+        // 2. TEMPERATURA
+        let thx = colW * 1.5 - 12, thy = 60, thw = 24, thh = 150;
+        ctx.fillStyle = "#ecf0f1";
+        ctx.fillRect(thx, thy, thw, thh - 20);
+        ctx.strokeRect(thx, thy, thw, thh - 20);
+        ctx.beginPath();
+        ctx.arc(thx + thw/2, thy + thh - 10, 16, 0, 2 * Math.PI);
+        ctx.fillStyle = "#e74c3c";
+        ctx.fill();
+        ctx.stroke();
+
+        let tRatio = Math.max(0, Math.min(1, plant.temp / 150));
+        let mercH = tRatio * (thh - 35);
+        ctx.fillStyle = "#e74c3c";
+        ctx.fillRect(thx + 4, (thy + thh - 25) - mercH, thw - 8, mercH);
+
+        ctx.fillStyle = "#2c3e50";
+        ctx.fillText(`Temp: ${plant.temp.toFixed(1)}°C`, thx - 18, thy - 12);
+
+        // 3. PRESSÃO
+        let gx = colW * 2.5, gy = 135, gr = 55;
+        ctx.beginPath();
+        ctx.arc(gx, gy, gr, 0, 2 * Math.PI);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#2c3e50";
+        ctx.stroke();
+
+        let pRatio = Math.max(0, Math.min(1, plant.press / 10));
+        let pAngle = Math.PI * (0.8 - pRatio * 1.6);
+        let nx = gx + (gr - 12) * Math.cos(pAngle);
+        let ny = gy - (gr - 12) * Math.sin(pAngle);
+
+        ctx.strokeStyle = "#c0392b";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(gx, gy);
+        ctx.lineTo(nx, ny);
+        ctx.stroke();
+
+        ctx.fillStyle = "#2c3e50";
+        ctx.beginPath(); ctx.arc(gx, gy, 4, 0, 2 * Math.PI); ctx.fill();
+
+        ctx.font = "bold 11px sans-serif";
+        ctx.fillText(`Pressão: ${plant.press.toFixed(2)} bar`, gx - 48, gy - gr - 12);
+    }
+
+    function drawChart() {
+        let canvas = document.getElementById('chartCanvas');
+        let ctx = canvas.getContext('2d');
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = 400;
+
+        let w = canvas.width;
+        let h = canvas.height;
+        let pad = 50;
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.strokeStyle = "#e0e0e0";
+        ctx.lineWidth = 1;
+        let graphW = w - 2 * pad;
+        let graphH = h - 2 * pad;
+
+        for (let i = 0; i <= 5; i++) {
+            let y = pad + (graphH / 5) * i;
+            ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(w - pad, y); ctx.stroke();
+            let x = pad + (graphW / 5) * i;
+            ctx.beginPath(); ctx.moveTo(x, pad); ctx.lineTo(x, h - pad); ctx.stroke();
+        }
+
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(pad, pad, graphW, graphH);
+
+        let times = plant.history.time;
+        
+        let minT = (zoomMinTime !== null) ? zoomMinTime : 0;
+        let maxT = (zoomMaxTime !== null) ? zoomMaxTime : 10; 
+        if (times.length > 0 && times[times.length - 1] > maxT && zoomMaxTime === null) {
+            maxT = Math.ceil(times[times.length - 1] / 5) * 5;
+        }
+        if (maxT <= minT) maxT = minT + 5;
+
+        function mapX(t) { return pad + ((t - minT) / (maxT - minT)) * graphW; }
+        
+        // ADAPTAÇÃO DINÂMICA DE ESCALA DO EIXO Y COM BASE NA GRANDEZA SELECIONADA
+        let activeMagnitudes = 0;
+        if (showLevel) activeMagnitudes++;
+        if (showTemp) activeMagnitudes++;
+        if (showPress) activeMagnitudes++;
+
+        let maxValY = 100; // Padrão Nível
+        let labelYText = "Amplitude (Nível %)";
+        
+        if (activeMagnitudes === 1) {
+            if (showLevel) { maxValY = 100; labelYText = "Nível (%) - Máx: 100"; }
+            else if (showTemp) { maxValY = 150; labelYText = "Temperatura (°C) - Máx: 150"; }
+            else if (showPress) { maxValY = 10; labelYText = "Pressão (bar) - Máx: 10"; }
+        } else {
+            labelYText = "Amplitude Mista (Nível/Temp/Pressão)";
+            maxValY = 150; // Escala combinada segura para abranger temperatura
+        }
+
+        function mapY(val, maxVal) { 
+            let ratio = val / maxVal;
+            ratio = Math.max(0, Math.min(1.2, ratio));
+            return (h - pad) - ratio * graphH; 
+        }
+
+        ctx.fillStyle = "#000000";
+        ctx.font = "12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("Time (seconds)", w / 2, h - 10);
+
+        ctx.save();
+        ctx.translate(15, h / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(labelYText, 0, 0);
+        ctx.restore();
+
+        ctx.font = "10px Arial";
+        for (let i = 0; i <= 5; i++) {
+            let tVal = minT + ((maxT - minT) / 5) * i;
+            ctx.textAlign = "center";
+            ctx.fillText(tVal.toFixed(1), pad + (graphW / 5) * i, h - pad + 15);
+            let ampVal = maxValY * (1.2 - (1.2 / 5) * i);
+            ctx.textAlign = "right";
+            ctx.fillText(ampVal.toFixed(1), pad - 8, pad + (graphH / 5) * i + 4);
+        }
+
+        function plotCurve(timeArr, dataArr, spArr, color, maxVal) {
+            if (timeArr.length < 2) return;
+            let spVal = spArr[spArr.length - 1];
+            let spY = mapY(spVal, maxVal);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(pad, spY);
+            ctx.lineTo(w - pad, spY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            let started = false;
+            for (let i = 0; i < timeArr.length; i++) {
+                let t = timeArr[i];
+                if (t >= minT && t <= maxT) {
+                    let x = mapX(t);
+                    let y = mapY(dataArr[i], maxVal);
+                    if (!started) { ctx.moveTo(x, y); started = true; } else { ctx.lineTo(x, y); }
+                }
+            }
+            ctx.stroke();
+        }
+
+        if (showLevel) plotCurve(times, plant.history.level, plant.history.spL, '#1f77b4', maxValY);
+        if (showTemp) plotCurve(times, plant.history.temp, plant.history.spT, '#ff7f0e', maxValY);
+        if (showPress) plotCurve(times, plant.history.press, plant.history.spP, '#2ca02c', maxValY);
+
+        if (isDragging) {
+            ctx.fillStyle = "rgba(41, 128, 185, 0.2)";
+            ctx.strokeStyle = "#2980b9";
+            ctx.lineWidth = 1;
+            let rx = Math.min(dragStartX, dragEndX);
+            let rw = Math.abs(dragEndX - dragStartX);
+            ctx.fillRect(rx, pad, rw, graphH);
+            ctx.strokeRect(rx, pad, rw, graphH);
+        }
+    }
+
+    let chartCanvas = document.getElementById('chartCanvas');
+    chartCanvas.addEventListener('mousedown', (e) => {
+        let rect = chartCanvas.getBoundingClientRect();
+        isDragging = true;
+        dragStartX = e.clientX - rect.left;
+    });
+
+    chartCanvas.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        let rect = chartCanvas.getBoundingClientRect();
+        dragEndX = e.clientX - rect.left;
+    });
+
+    chartCanvas.addEventListener('mouseup', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        let rect = chartCanvas.getBoundingClientRect();
+        dragEndX = e.clientX - rect.left;
+
+        let x1 = Math.min(dragStartX, dragEndX);
+        let x2 = Math.max(dragStartX, dragEndX);
+
+        if (Math.abs(x2 - x1) > 10) {
+            let pad = 50;
+            let graphW = chartCanvas.width - 2 * pad;
+            let times = plant.history.time;
+            if (times.length < 2) return;
+
+            let minT = (zoomMinTime !== null) ? zoomMinTime : 0;
+            let maxT = (zoomMaxTime !== null) ? zoomMaxTime : (times.length > 0 ? times[times.length - 1] : 10);
+
+            let t1 = minT + ((x1 - pad) / graphW) * (maxT - minT);
+            let t2 = minT + ((x2 - pad) / graphW) * (maxT - minT);
+
+            zoomMinTime = Math.max(0, Math.min(t1, t2));
+            zoomMaxTime = Math.min(times[times.length - 1], Math.max(t1, t2));
+        }
+    });
+
+    drawPlant();
+    drawChart();
+
+    setInterval(simulate, 100);
+</script>
+
+</body>
+</html>
