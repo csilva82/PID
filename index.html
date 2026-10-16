@@ -1,10 +1,14 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <!-- Tag essencial para responsividade no celular -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Simulador de controle PID</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body {
             background-color: #2b3e50;
             color: #ecf0f1;
@@ -18,10 +22,13 @@
             align-items: center;
             max-width: 1550px;
             margin: 0 auto 15px auto;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         h2 { 
             margin: 0; 
-            color: #1abc9c; 
+            color: #1abc9c;
+            font-size: clamp(18px, 4vw, 24px);
         }
         .header-buttons {
             display: flex;
@@ -31,7 +38,7 @@
             background: #3498db;
             color: white;
             border: none;
-            padding: 8px 12px;
+            padding: 8px 14px;
             border-radius: 4px;
             font-weight: bold;
             font-size: 13px;
@@ -43,7 +50,7 @@
         }
         .btn-top:hover { background: #2980b9; }
 
-        /* Modais */
+        /* Modais Responsivos */
         .modal {
             display: none;
             position: fixed;
@@ -52,16 +59,18 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.6);
+            background-color: rgba(0,0,0,0.7);
             justify-content: center;
             align-items: center;
+            padding: 15px;
         }
         .modal-content {
             background-color: #34495e;
-            padding: 25px;
+            padding: 20px;
             border-radius: 6px;
             border: 2px solid #2c3e50;
-            width: 650px;
+            width: 100%;
+            max-width: 650px;
             max-height: 85vh;
             overflow-y: auto;
             color: #ecf0f1;
@@ -74,7 +83,8 @@
             padding: 10px;
             margin: 8px 0;
             font-family: monospace;
-            font-size: 13px;
+            font-size: 12px;
+            overflow-x: auto;
         }
         .example-box {
             background: #1a252f;
@@ -87,14 +97,15 @@
             background: #e74c3c;
             color: white;
             border: none;
-            padding: 6px 14px;
-            border-radius: 3px;
+            padding: 8px 18px;
+            border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
             display: block;
             margin: 15px auto 0 auto;
         }
 
+        /* Layout Grid Principal */
         .dashboard {
             display: grid;
             grid-template-columns: 430px 1fr 340px;
@@ -108,34 +119,39 @@
             border-radius: 6px;
             padding: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            min-width: 0; /* Evita estouro de grid no mobile */
         }
         .panel h3 { margin-top: 0; font-size: 15px; border-bottom: 1px solid #4e6d8c; padding-bottom: 5px; color: #f1c40f; }
         
         /* Gráfico Estilo MATLAB com Zoom */
-        .chart-container { position: relative; background: #fff; border-radius: 4px; padding: 10px; }
+        .chart-container { position: relative; background: #fff; border-radius: 4px; padding: 6px; }
         #chartCanvas {
             background: #fff;
             border: 1px solid #bdc3c7;
             width: 100%;
-            height: 400px;
+            height: 380px;
             cursor: crosshair;
+            display: block;
+            touch-action: none; /* Permite arrastar o zoom no touch sem rolar a tela */
         }
         .chart-toolbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
             margin-bottom: 8px;
             font-size: 12px;
             background: #2c3e50;
-            padding: 6px;
+            padding: 8px;
             border-radius: 4px;
         }
-        .chart-toolbar label { cursor: pointer; margin-right: 6px; font-weight: bold; color: #fff; }
+        .chart-toolbar label { cursor: pointer; margin-right: 8px; font-weight: bold; color: #fff; display: inline-flex; align-items: center; gap: 3px; }
         .btn-zoom {
             background: #e67e22;
             color: white;
             border: none;
-            padding: 4px 8px;
+            padding: 6px 10px;
             border-radius: 3px;
             cursor: pointer;
             font-weight: bold;
@@ -146,26 +162,29 @@
         /* Botões de Controle de Simulação */
         .sim-controls {
             display: flex;
-            gap: 5px;
+            gap: 6px;
             margin-bottom: 8px;
             background: #1a252f;
-            padding: 6px;
+            padding: 8px;
             border-radius: 4px;
             justify-content: center;
+            flex-wrap: wrap;
         }
         .btn-sim {
-            padding: 5px 12px;
+            flex: 1;
+            min-width: 80px;
+            padding: 8px 10px;
             font-weight: bold;
             border: none;
-            border-radius: 3px;
+            border-radius: 4px;
             cursor: pointer;
             color: white;
-            font-size: 11px;
+            font-size: 12px;
         }
         .btn-start { background: #27ae60; }
         .btn-pause { background: #f39c12; }
-        .btn-reset { background: #c0392b; }
-        .btn-sim:hover { opacity: 0.85; }
+        .btn-reset { background: #c0392b; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 8px; }
+        .btn-sim:hover, .btn-reset:hover { opacity: 0.9; }
 
         /* Painel de Estabilização */
         .stab-box {
@@ -174,20 +193,38 @@
             border-radius: 4px;
             padding: 8px;
             margin-top: 8px;
-            font-size: 11px;
+            font-size: 12px;
+            line-height: 1.5;
         }
         .stab-box b { color: #1abc9c; }
 
-        /* Controles e Sliders */
+        /* Controles e Inputs */
         .control-group {
-            display: flex;
-            gap: 5px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
             margin-bottom: 6px;
             font-size: 12px;
-            align-items: center;
         }
-        .control-group label { font-weight: bold; }
-        .control-group input[type="number"] { width: 50px; padding: 2px; background: #2c3e50; color: #fff; border: 1px solid #7f8c8d; text-align: center; }
+        .control-group label {
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            background: #2c3e50;
+            padding: 4px 6px;
+            border-radius: 4px;
+        }
+        .control-group input[type="number"] {
+            width: 100%;
+            padding: 4px;
+            margin-top: 2px;
+            background: #1a252f;
+            color: #fff;
+            border: 1px solid #7f8c8d;
+            border-radius: 3px;
+            text-align: center;
+            font-size: 13px;
+        }
 
         .sp-pv-box {
             display: grid;
@@ -198,23 +235,38 @@
         .card-val {
             background: #f1c40f;
             color: #2c3e50;
-            padding: 5px;
+            padding: 6px;
             border-radius: 4px;
             text-align: center;
             font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .card-val input[type="number"] {
+            width: 80%;
+            margin: 2px auto 0 auto;
+            padding: 3px;
+            background: #fff;
+            color: #2c3e50;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
         }
         .card-val.pv { background: #3498db; color: #fff; }
-        .card-val span { display: block; font-size: 9px; text-transform: uppercase; }
+        .card-val span { display: block; font-size: 10px; text-transform: uppercase; }
 
         .btn-tune {
             background: #8e44ad;
             color: white;
             border: none;
-            padding: 4px 8px;
-            border-radius: 3px;
+            padding: 6px 10px;
+            border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 10px;
+            font-size: 11px;
         }
         .btn-tune:hover { background: #732d91; }
 
@@ -222,22 +274,55 @@
             background: #dcdde1;
             border-radius: 4px;
             width: 100%;
-            height: 300px;
+            height: 280px;
+            display: block;
         }
 
         .btn-sinistro {
             background: #e74c3c;
             color: white;
             border: none;
-            padding: 7px 10px;
+            padding: 10px;
             font-weight: bold;
             border-radius: 4px;
             cursor: pointer;
             width: 100%;
-            margin-top: 4px;
-            font-size: 11px;
+            margin-top: 6px;
+            font-size: 12px;
         }
-        .btn-sinistro.ativo { background: #c0392b; box-shadow: inset 0 0 5px rgba(0,0,0,0.5); }
+        .btn-sinistro.ativo { background: #c0392b; box-shadow: inset 0 0 8px rgba(0,0,0,0.6); border: 1px solid #fff; }
+
+        /* =========================================
+           MEDIA QUERIES (TABLETS E CELULARES)
+           ========================================= */
+        @media (max-width: 1150px) {
+            .dashboard {
+                grid-template-columns: 1fr 1fr;
+            }
+            .dashboard > .panel:nth-child(1) {
+                grid-column: 1 / -1; /* Gráfico ocupa a largura toda no topo em tablets */
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 8px;
+            }
+            .dashboard {
+                grid-template-columns: 1fr; /* Coluna única no celular */
+                gap: 12px;
+            }
+            #chartCanvas {
+                height: 280px; /* Altura reduzida para caber melhor na tela do celular */
+            }
+            #plantCanvas {
+                height: 230px;
+            }
+            .btn-sim, .btn-sinistro, .btn-tune {
+                padding: 10px; /* Área de toque maior para os dedos */
+                font-size: 13px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -245,7 +330,6 @@
     <div class="header-container">
         <h2>Simulador de controle PID</h2>
         <div class="header-buttons">
-           <!-- <button class="btn-top" onclick="abrirMemorial()">📊 Memorial de Cálculos</button> -->
             <button class="btn-top" onclick="abrirModal()" title="Sobre">?</button>
         </div>
     </div>
@@ -264,7 +348,6 @@
     <div id="modalMemorial" class="modal">
         <div class="modal-content">
             <h3>Memorial de Cálculos & Exemplo Prático</h3>
-            
             <p><b>1. Fórmulas Matemáticas Aplicadas:</b></p>
             <div class="formula-box">
                 MV(t) = Kp · e(t) + Ki ∫ e(τ)dτ - Kd · (d(PV)/dt)
@@ -276,43 +359,24 @@
                 <li><b>Ki</b> = Ganho Integral</li>
                 <li><b>Kd</b> = Ganho Derivativo (aplicado diretamente sobre o PV para evitar o tranco derivativo ou <i>derivative kick</i>).</li>
             </ul>
-
             <p><b>2. Critério de Estabilização (Settling Time):</b></p>
             <div class="formula-box">
                 |PV(t) - SP| ≤ 0.02 · SP (tolerância de ±2%)
             </div>
-
-            <p><b>3. Exemplo Prático para Exercício:</b></p>
-            <div class="example-box">
-                <b>Dados da Malha de Pressão:</b><br>
-                • Setpoint (SP) = 5.0 bar<br>
-                • PV Atual = 4.0 bar ⇒ Erro e(t) = 5.0 - 4.0 = 1.0 bar<br>
-                • Ganhos: Kp = 2.5, Ki = 0.1, Kd = 0.05<br>
-                • Integral acumulada prévia (∫ e dτ) = 5.0<br>
-                • Taxa de variação do PV (d(PV)/dt) = +0.5 bar/s<br><br>
-                
-                <b>Resolução Passo a Passo:</b><br>
-                1. Ação Proporcional (P) = Kp · e(t) = 2.5 · 1.0 = <b>2.5</b><br>
-                2. Ação Integral (I) = Ki · ∫ e dτ = 0.1 · 5.0 = <b>0.5</b><br>
-                3. Ação Derivativa (D) = -Kd · (d(PV)/dt) = -0.05 · 0.5 = <b>-0.025</b><br>
-                4. Saída Total (MV) = P + I + D = 2.5 + 0.5 - 0.025 = <b>2.975%</b><br>
-                <i>Resultado: O atuador de pressão receberá o sinal proporcional de correção.</i>
-            </div>
-
             <button class="close-btn" onclick="fecharMemorial()">Fechar</button>
         </div>
     </div>
 
     <div class="dashboard">
         
-        <!-- COLUNA 1: GRÁFICO COM ADAPTAÇÃO DINÂMICA DE ESCALA POR GRANDEZA -->
+        <!-- COLUNA 1: GRÁFICO -->
         <div class="panel">
             <h3>Step Response & Zoom Trend</h3>
             
             <div class="sim-controls">
                 <button class="btn-sim btn-start" onclick="startSim()">▶ Iniciar</button>
                 <button class="btn-sim btn-pause" onclick="pauseSim()">⏸ Pausar</button>
-                <button class="btn-sim btn-reset" onclick="hardResetSim()">🔄 Reiniciar Tudo</button>
+                <button class="btn-sim" style="background:#c0392b;" onclick="hardResetSim()">🔄 Reiniciar</button>
             </div>
 
             <div class="chart-toolbar">
@@ -338,17 +402,17 @@
                 ⏲ Pressão: <span id="stabP">Aguardando...</span>
             </div>
 
-            <div style="font-size: 11px; margin-top: 6px; color: #7f8c8d; text-align: center;" id="statusRunText">
-                💡 <i>Clique em "Iniciar" para dar início à resposta ao degrau a partir de t=0.</i>
+            <div style="font-size: 11px; margin-top: 6px; color: #bdc3c7; text-align: center;" id="statusRunText">
+                💡 <i>Toque em "Iniciar" para começar. Arraste no gráfico para Zoom.</i>
             </div>
         </div>
 
-        <!-- COLUNA 2: DIAGRAMA COM INSTRUMENTOS ESPAÇADOS -->
+        <!-- COLUNA 2: DIAGRAMA DA PLANTA -->
         <div class="panel">
             <h3>Visualização da Planta Industrial</h3>
             <canvas id="plantCanvas"></canvas>
             
-            <div style="margin-top: 8px;">
+            <div style="margin-top: 10px;">
                 <h3>Painel de Sinistros & Distúrbios</h3>
                 <button id="btnVazao" class="btn-sinistro" onclick="toggleSinistro('vazamento')">💥 Vazamento no Tanque (Fuga)</button>
                 <button id="btnResf" class="btn-sinistro" onclick="toggleSinistro('resfriamento')" style="background:#2980b9;">❄ Choque Térmico (Resfriamento)</button>
@@ -356,58 +420,58 @@
             </div>
         </div>
 
-        <!-- COLUNA 3: CONTROLES, SINTONIA PID E AUTO-TUNING -->
+        <!-- COLUNA 3: CONTROLES E SINTONIA PID -->
         <div class="panel">
             <h3>Parâmetros & Auto-Tuning PID</h3>
 
             <!-- Nível (LC) -->
-            <div style="border-bottom: 1px solid #4e6d8c; padding-bottom: 5px; margin-bottom: 5px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <b style="color: #2980b9; font-size:12px;">Malha de Nível (LC)</b>
+            <div style="border-bottom: 1px solid #4e6d8c; padding-bottom: 8px; margin-bottom: 8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+                    <b style="color: #3498db; font-size:13px;">Malha de Nível (LC)</b>
                     <button class="btn-tune" id="btnTuneL" onclick="startAutoTune('level')">⚙ Auto-Tune</button>
                 </div>
-                <div class="sp-pv-box" style="margin-top:3px;">
-                    <div class="card-val"><span>SP Nível</span><input type="number" id="spL" value="50" oninput="updateAllFromInputs()"></div>
-                    <div class="card-val pv"><span>PV Nível</span><span id="pvL" style="font-size:12px; margin-top:2px;">0.0%</span></div>
+                <div class="sp-pv-box">
+                    <div class="card-val"><span>SP Nível (%)</span><input type="number" id="spL" value="50" oninput="updateAllFromInputs()"></div>
+                    <div class="card-val pv"><span>PV Nível</span><span id="pvL" style="font-size:14px; margin-top:4px;">0.0%</span></div>
                 </div>
                 <div class="control-group">
-                    <label>Kp:<input type="number" id="kpL" value="2.0" step="0.1" oninput="updateAllFromInputs()"></label>
-                    <label>Ki:<input type="number" id="kiL" value="0.1" step="0.01" oninput="updateAllFromInputs()"></label>
-                    <label>Kd:<input type="number" id="kdL" value="0.05" step="0.01" oninput="updateAllFromInputs()"></label>
+                    <label>Kp <input type="number" id="kpL" value="2.0" step="0.1" oninput="updateAllFromInputs()"></label>
+                    <label>Ki <input type="number" id="kiL" value="0.1" step="0.01" oninput="updateAllFromInputs()"></label>
+                    <label>Kd <input type="number" id="kdL" value="0.05" step="0.01" oninput="updateAllFromInputs()"></label>
                 </div>
             </div>
 
             <!-- Temperatura (AC) -->
-            <div style="border-bottom: 1px solid #4e6d8c; padding-bottom: 5px; margin-bottom: 5px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <b style="color: #d35400; font-size:12px;">Malha de Temperatura (AC)</b>
+            <div style="border-bottom: 1px solid #4e6d8c; padding-bottom: 8px; margin-bottom: 8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+                    <b style="color: #e67e22; font-size:13px;">Malha de Temperatura (AC)</b>
                     <button class="btn-tune" id="btnTuneT" onclick="startAutoTune('temp')">⚙ Auto-Tune</button>
                 </div>
-                <div class="sp-pv-box" style="margin-top:3px;">
-                    <div class="card-val"><span>SP Temp</span><input type="number" id="spT" value="60" oninput="updateAllFromInputs()"></div>
-                    <div class="card-val pv" style="background:#e67e22;"><span>PV Temp</span><span id="pvT" style="font-size:12px; margin-top:2px;">0.0°C</span></div>
+                <div class="sp-pv-box">
+                    <div class="card-val"><span>SP Temp (°C)</span><input type="number" id="spT" value="60" oninput="updateAllFromInputs()"></div>
+                    <div class="card-val pv" style="background:#e67e22;"><span>PV Temp</span><span id="pvT" style="font-size:14px; margin-top:4px;">0.0°C</span></div>
                 </div>
                 <div class="control-group">
-                    <label>Kp:<input type="number" id="kpT" value="3.0" step="0.1" oninput="updateAllFromInputs()"></label>
-                    <label>Ki:<input type="number" id="kiT" value="0.15" step="0.01" oninput="updateAllFromInputs()"></label>
-                    <label>Kd:<input type="number" id="kdT" value="0.08" step="0.01" oninput="updateAllFromInputs()"></label>
+                    <label>Kp <input type="number" id="kpT" value="3.0" step="0.1" oninput="updateAllFromInputs()"></label>
+                    <label>Ki <input type="number" id="kiT" value="0.15" step="0.01" oninput="updateAllFromInputs()"></label>
+                    <label>Kd <input type="number" id="kdT" value="0.08" step="0.01" oninput="updateAllFromInputs()"></label>
                 </div>
             </div>
 
             <!-- Pressão (PC) -->
             <div>
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <b style="color: #27ae60; font-size:12px;">Malha de Pressão (PC)</b>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+                    <b style="color: #2ecc71; font-size:13px;">Malha de Pressão (PC)</b>
                     <button class="btn-tune" id="btnTuneP" onclick="startAutoTune('press')">⚙ Auto-Tune</button>
                 </div>
-                <div class="sp-pv-box" style="margin-top:3px;">
-                    <div class="card-val"><span>SP Press</span><input type="number" id="spP" value="5.0" step="0.1" oninput="updateAllFromInputs()"></div>
-                    <div class="card-val pv" style="background:#27ae60;"><span>PV Press</span><span id="pvP" style="font-size:12px; margin-top:2px;">0.0 bar</span></div>
+                <div class="sp-pv-box">
+                    <div class="card-val"><span>SP Press (bar)</span><input type="number" id="spP" value="5.0" step="0.1" oninput="updateAllFromInputs()"></div>
+                    <div class="card-val pv" style="background:#27ae60;"><span>PV Press</span><span id="pvP" style="font-size:14px; margin-top:4px;">0.0 bar</span></div>
                 </div>
                 <div class="control-group">
-                    <label>Kp:<input type="number" id="kpP" value="2.5" step="0.1" oninput="updateAllFromInputs()"></label>
-                    <label>Ki:<input type="number" id="kiP" value="0.1" step="0.01" oninput="updateAllFromInputs()"></label>
-                    <label>Kd:<input type="number" id="kdP" value="0.05" step="0.01" oninput="updateAllFromInputs()"></label>
+                    <label>Kp <input type="number" id="kpP" value="2.5" step="0.1" oninput="updateAllFromInputs()"></label>
+                    <label>Ki <input type="number" id="kiP" value="0.1" step="0.01" oninput="updateAllFromInputs()"></label>
+                    <label>Kd <input type="number" id="kdP" value="0.05" step="0.01" oninput="updateAllFromInputs()"></label>
                 </div>
             </div>
 
@@ -466,18 +530,19 @@
         showLevel = document.getElementById('chkL').checked;
         showTemp = document.getElementById('chkT').checked;
         showPress = document.getElementById('chkP').checked;
+        drawChart();
     }
 
-    function resetZoom() { zoomMinTime = null; zoomMaxTime = null; }
+    function resetZoom() { zoomMinTime = null; zoomMaxTime = null; drawChart(); }
 
     function startSim() {
         plant.isRunning = true;
-        document.getElementById('statusRunText').innerHTML = "Status: <b>Simulação rodando a partir de t=0</b>";
+        document.getElementById('statusRunText').innerHTML = "Status: <b>Simulação em andamento...</b>";
     }
 
     function pauseSim() {
         plant.isRunning = false;
-        document.getElementById('statusRunText').innerHTML = "Status: <b>Pausado</b>";
+        document.getElementById('statusRunText').innerHTML = "Status: <b>Simulação Pausada</b>";
     }
 
     function hardResetSim() {
@@ -490,10 +555,13 @@
         pidL.prevPv = null; pidT.prevPv = null; pidP.prevPv = null;
         resetZoom();
         plant.isRunning = false;
-        document.getElementById('statusRunText').innerHTML = "Status: <b>Reiniciado. Clique em 'Iniciar' para começar.</b>";
+        document.getElementById('statusRunText').innerHTML = "Status: <b>Reiniciado. Toque em 'Iniciar' para começar.</b>";
         document.getElementById('stabL').innerText = "Aguardando...";
         document.getElementById('stabT').innerText = "Aguardando...";
         document.getElementById('stabP').innerText = "Aguardando...";
+        document.getElementById('pvL').innerText = "0.0%";
+        document.getElementById('pvT').innerText = "0.0°C";
+        document.getElementById('pvP').innerText = "0.00 bar";
         drawPlant();
         drawChart();
     }
@@ -656,15 +724,24 @@
     function drawPlant() {
         let canvas = document.getElementById('plantCanvas');
         let ctx = canvas.getContext('2d');
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = 300;
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         let w = canvas.width;
+        let h = canvas.height;
         let colW = w / 3;
+        let isSmall = w < 380;
+
+        ctx.textAlign = "center";
+        let fontSize = isSmall ? "bold 10px sans-serif" : "bold 12px sans-serif";
 
         // 1. NÍVEL
-        let tx = colW * 0.5 - 30, ty = 60, tw = 60, th = 150;
+        let tw = Math.min(60, colW * 0.55);
+        let th = Math.min(140, h * 0.6);
+        let tx = colW * 0.5 - tw / 2;
+        let ty = (h - th) / 2 + 10;
+
         ctx.fillStyle = "#bdc3c7";
         ctx.fillRect(tx, ty, tw, th);
         ctx.strokeStyle = "#2c3e50";
@@ -676,30 +753,37 @@
         ctx.fillRect(tx + 2, (ty + th - 2) - liquidH, tw - 4, liquidH);
         
         ctx.fillStyle = "#2c3e50";
-        ctx.font = "bold 11px sans-serif";
-        ctx.fillText(`Nível: ${plant.level.toFixed(1)}%`, tx - 5, ty - 12);
+        ctx.font = fontSize;
+        ctx.fillText(`Nível: ${plant.level.toFixed(1)}%`, colW * 0.5, ty - 10);
 
         // 2. TEMPERATURA
-        let thx = colW * 1.5 - 12, thy = 60, thw = 24, thh = 150;
+        let thw = Math.min(22, colW * 0.25);
+        let thh = th;
+        let thx = colW * 1.5 - thw / 2;
+        let thy = ty;
+
         ctx.fillStyle = "#ecf0f1";
-        ctx.fillRect(thx, thy, thw, thh - 20);
-        ctx.strokeRect(thx, thy, thw, thh - 20);
+        ctx.fillRect(thx, thy, thw, thh - 16);
+        ctx.strokeRect(thx, thy, thw, thh - 16);
         ctx.beginPath();
-        ctx.arc(thx + thw/2, thy + thh - 10, 16, 0, 2 * Math.PI);
+        ctx.arc(colW * 1.5, thy + thh - 8, thw * 0.65, 0, 2 * Math.PI);
         ctx.fillStyle = "#e74c3c";
         ctx.fill();
         ctx.stroke();
 
         let tRatio = Math.max(0, Math.min(1, plant.temp / 150));
-        let mercH = tRatio * (thh - 35);
+        let mercH = tRatio * (thh - 30);
         ctx.fillStyle = "#e74c3c";
-        ctx.fillRect(thx + 4, (thy + thh - 25) - mercH, thw - 8, mercH);
+        ctx.fillRect(thx + 3, (thy + thh - 20) - mercH, thw - 6, mercH);
 
         ctx.fillStyle = "#2c3e50";
-        ctx.fillText(`Temp: ${plant.temp.toFixed(1)}°C`, thx - 18, thy - 12);
+        ctx.fillText(`Temp: ${plant.temp.toFixed(1)}°C`, colW * 1.5, thy - 10);
 
         // 3. PRESSÃO
-        let gx = colW * 2.5, gy = 135, gr = 55;
+        let gr = Math.min(50, colW * 0.38, h * 0.28);
+        let gx = colW * 2.5;
+        let gy = ty + th / 2;
+
         ctx.beginPath();
         ctx.arc(gx, gy, gr, 0, 2 * Math.PI);
         ctx.fillStyle = "#ffffff";
@@ -710,8 +794,8 @@
 
         let pRatio = Math.max(0, Math.min(1, plant.press / 10));
         let pAngle = Math.PI * (0.8 - pRatio * 1.6);
-        let nx = gx + (gr - 12) * Math.cos(pAngle);
-        let ny = gy - (gr - 12) * Math.sin(pAngle);
+        let nx = gx + (gr - 10) * Math.cos(pAngle);
+        let ny = gy - (gr - 10) * Math.sin(pAngle);
 
         ctx.strokeStyle = "#c0392b";
         ctx.lineWidth = 2;
@@ -723,38 +807,41 @@
         ctx.fillStyle = "#2c3e50";
         ctx.beginPath(); ctx.arc(gx, gy, 4, 0, 2 * Math.PI); ctx.fill();
 
-        ctx.font = "bold 11px sans-serif";
-        ctx.fillText(`Pressão: ${plant.press.toFixed(2)} bar`, gx - 48, gy - gr - 12);
+        ctx.font = fontSize;
+        ctx.fillText(`Press: ${plant.press.toFixed(2)} bar`, gx, ty - 10);
     }
 
     function drawChart() {
         let canvas = document.getElementById('chartCanvas');
         let ctx = canvas.getContext('2d');
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = 400;
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
 
         let w = canvas.width;
         let h = canvas.height;
-        let pad = 50;
+        let padL = w < 400 ? 38 : 50;
+        let padR = 15;
+        let padT = 20;
+        let padB = 35;
 
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, w, h);
 
         ctx.strokeStyle = "#e0e0e0";
         ctx.lineWidth = 1;
-        let graphW = w - 2 * pad;
-        let graphH = h - 2 * pad;
+        let graphW = w - padL - padR;
+        let graphH = h - padT - padB;
 
         for (let i = 0; i <= 5; i++) {
-            let y = pad + (graphH / 5) * i;
-            ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(w - pad, y); ctx.stroke();
-            let x = pad + (graphW / 5) * i;
-            ctx.beginPath(); ctx.moveTo(x, pad); ctx.lineTo(x, h - pad); ctx.stroke();
+            let y = padT + (graphH / 5) * i;
+            ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
+            let x = padL + (graphW / 5) * i;
+            ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, h - padB); ctx.stroke();
         }
 
         ctx.strokeStyle = "#000000";
         ctx.lineWidth = 1.5;
-        ctx.strokeRect(pad, pad, graphW, graphH);
+        ctx.strokeRect(padL, padT, graphW, graphH);
 
         let times = plant.history.time;
         
@@ -765,51 +852,52 @@
         }
         if (maxT <= minT) maxT = minT + 5;
 
-        function mapX(t) { return pad + ((t - minT) / (maxT - minT)) * graphW; }
+        function mapX(t) { return padL + ((t - minT) / (maxT - minT)) * graphW; }
         
-        // ADAPTAÇÃO DINÂMICA DE ESCALA DO EIXO Y COM BASE NA GRANDEZA SELECIONADA
         let activeMagnitudes = 0;
         if (showLevel) activeMagnitudes++;
         if (showTemp) activeMagnitudes++;
         if (showPress) activeMagnitudes++;
 
-        let maxValY = 100; // Padrão Nível
-        let labelYText = "Amplitude (Nível %)";
+        let maxValY = 100;
+        let labelYText = "Amplitude";
         
         if (activeMagnitudes === 1) {
-            if (showLevel) { maxValY = 100; labelYText = "Nível (%) - Máx: 100"; }
-            else if (showTemp) { maxValY = 150; labelYText = "Temperatura (°C) - Máx: 150"; }
-            else if (showPress) { maxValY = 10; labelYText = "Pressão (bar) - Máx: 10"; }
+            if (showLevel) { maxValY = 100; labelYText = "Nível (%)"; }
+            else if (showTemp) { maxValY = 150; labelYText = "Temp (°C)"; }
+            else if (showPress) { maxValY = 10; labelYText = "Pressão (bar)"; }
         } else {
-            labelYText = "Amplitude Mista (Nível/Temp/Pressão)";
-            maxValY = 150; // Escala combinada segura para abranger temperatura
+            labelYText = "Escala Mista";
+            maxValY = 150;
         }
 
         function mapY(val, maxVal) { 
             let ratio = val / maxVal;
             ratio = Math.max(0, Math.min(1.2, ratio));
-            return (h - pad) - ratio * graphH; 
+            return (h - padB) - ratio * graphH; 
         }
 
         ctx.fillStyle = "#000000";
-        ctx.font = "12px Arial";
+        ctx.font = "11px Arial";
         ctx.textAlign = "center";
-        ctx.fillText("Time (seconds)", w / 2, h - 10);
+        ctx.fillText("Tempo (s)", padL + graphW / 2, h - 6);
 
-        ctx.save();
-        ctx.translate(15, h / 2);
-        ctx.rotate(-Math.PI / 2);
-        ctx.fillText(labelYText, 0, 0);
-        ctx.restore();
+        if (w >= 400) {
+            ctx.save();
+            ctx.translate(12, padT + graphH / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(labelYText, 0, 0);
+            ctx.restore();
+        }
 
         ctx.font = "10px Arial";
         for (let i = 0; i <= 5; i++) {
             let tVal = minT + ((maxT - minT) / 5) * i;
             ctx.textAlign = "center";
-            ctx.fillText(tVal.toFixed(1), pad + (graphW / 5) * i, h - pad + 15);
+            ctx.fillText(tVal.toFixed(1), padL + (graphW / 5) * i, h - padB + 14);
             let ampVal = maxValY * (1.2 - (1.2 / 5) * i);
             ctx.textAlign = "right";
-            ctx.fillText(ampVal.toFixed(1), pad - 8, pad + (graphH / 5) * i + 4);
+            ctx.fillText(ampVal.toFixed(0), padL - 5, padT + (graphH / 5) * i + 4);
         }
 
         function plotCurve(timeArr, dataArr, spArr, color, maxVal) {
@@ -820,8 +908,8 @@
             ctx.lineWidth = 1;
             ctx.setLineDash([3, 3]);
             ctx.beginPath();
-            ctx.moveTo(pad, spY);
-            ctx.lineTo(w - pad, spY);
+            ctx.moveTo(padL, spY);
+            ctx.lineTo(w - padR, spY);
             ctx.stroke();
             ctx.setLineDash([]);
 
@@ -850,48 +938,68 @@
             ctx.lineWidth = 1;
             let rx = Math.min(dragStartX, dragEndX);
             let rw = Math.abs(dragEndX - dragStartX);
-            ctx.fillRect(rx, pad, rw, graphH);
-            ctx.strokeRect(rx, pad, rw, graphH);
+            ctx.fillRect(rx, padT, rw, graphH);
+            ctx.strokeRect(rx, padT, rw, graphH);
         }
     }
 
+    // Eventos de Zoom (Suporte a Mouse e Touch para Celular)
     let chartCanvas = document.getElementById('chartCanvas');
-    chartCanvas.addEventListener('mousedown', (e) => {
+
+    function getPointerX(e) {
         let rect = chartCanvas.getBoundingClientRect();
+        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        return clientX - rect.left;
+    }
+
+    function startDrag(e) {
         isDragging = true;
-        dragStartX = e.clientX - rect.left;
-    });
+        dragStartX = getPointerX(e);
+        dragEndX = dragStartX;
+    }
 
-    chartCanvas.addEventListener('mousemove', (e) => {
+    function moveDrag(e) {
         if (!isDragging) return;
-        let rect = chartCanvas.getBoundingClientRect();
-        dragEndX = e.clientX - rect.left;
-    });
+        dragEndX = getPointerX(e);
+    }
 
-    chartCanvas.addEventListener('mouseup', (e) => {
+    function endDrag() {
         if (!isDragging) return;
         isDragging = false;
-        let rect = chartCanvas.getBoundingClientRect();
-        dragEndX = e.clientX - rect.left;
 
         let x1 = Math.min(dragStartX, dragEndX);
         let x2 = Math.max(dragStartX, dragEndX);
 
         if (Math.abs(x2 - x1) > 10) {
-            let pad = 50;
-            let graphW = chartCanvas.width - 2 * pad;
+            let padL = chartCanvas.width < 400 ? 38 : 50;
+            let padR = 15;
+            let graphW = chartCanvas.width - padL - padR;
             let times = plant.history.time;
             if (times.length < 2) return;
 
             let minT = (zoomMinTime !== null) ? zoomMinTime : 0;
             let maxT = (zoomMaxTime !== null) ? zoomMaxTime : (times.length > 0 ? times[times.length - 1] : 10);
 
-            let t1 = minT + ((x1 - pad) / graphW) * (maxT - minT);
-            let t2 = minT + ((x2 - pad) / graphW) * (maxT - minT);
+            let t1 = minT + ((x1 - padL) / graphW) * (maxT - minT);
+            let t2 = minT + ((x2 - padL) / graphW) * (maxT - minT);
 
             zoomMinTime = Math.max(0, Math.min(t1, t2));
             zoomMaxTime = Math.min(times[times.length - 1], Math.max(t1, t2));
+            drawChart();
         }
+    }
+
+    chartCanvas.addEventListener('mousedown', startDrag);
+    chartCanvas.addEventListener('mousemove', moveDrag);
+    window.addEventListener('mouseup', endDrag);
+
+    chartCanvas.addEventListener('touchstart', (e) => { startDrag(e); }, { passive: true });
+    chartCanvas.addEventListener('touchmove', (e) => { moveDrag(e); }, { passive: true });
+    chartCanvas.addEventListener('touchend', endDrag);
+
+    window.addEventListener('resize', () => {
+        drawPlant();
+        drawChart();
     });
 
     drawPlant();
